@@ -16,24 +16,20 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 def train():
     #Initializing model
     print 'Building Model.'
-    model_dir = 'model_proxy_conf2_small_mazze_4actionscp.hdf5'
-    model = load_model( model_dir )
+    model_dir = '/home/daniel/IA/rl-car/src/proxy/model_3sensor.hdf5'
     model_name = os.path.basename(model_dir)
-    print 'Saved model found.'
-    """
+    model_name = model_name[0:13]
+    
     try:
-        model = load_model(model_name +'.hdf5')
+        model = load_model(model_dir)
         
         print 'Saved model found.'
     
     except:
         model = Sequential()
-        model.add(Dense(units=12, input_dim=16))
-        model.add(Activation("relu"))
-        model.add(Dense(units=10))
-        model.add(Activation("relu"))
-        model.add(Dense(units=5))
-        model.add(Activation("relu"))
+        model.add(Dense(units=15, input_dim=3, activation='relu'))
+        model.add(Dense(units=10, activation='relu'))
+        model.add(Dense(units=5, activation='relu'))
         model.compile(optimizer='Adam', loss='categorical_crossentropy')
         
         print 'No model found, creating new.'
@@ -41,16 +37,16 @@ def train():
         
         plot_model(model, to_file=model_name +'.png', show_shapes=True, show_layer_names=True)
         print 'Model save to file:', model_name +'.png'
-    """    
+        
             
     #Initializing environment
     env = RLBot()
 
     # Set learning parameters
     y = .99
-    e = 0.3
-    num_epochs = 150
-    num_steps = 500
+    e = 0.2
+    num_epochs = 100
+    num_steps = 100
     # create lists to contain total rewards and steps per episode
     stepList = []
     rewardList = []
@@ -68,6 +64,13 @@ def train():
         rAll = 0
         done = False
         loss = 0
+        
+        if i <= 60 and i>30:
+            num_steps = 300
+
+        elif i > 60:
+            num_steps = 500
+
         # The Q-Network
         for j in range(num_steps):
             print("Epoch {} | Step {} | Action: {} | Reward: {}".format(i, j, action, reward))
@@ -86,8 +89,8 @@ def train():
                 speed[0] = SPEED
                 speed[1] = SPEED
             if action == 1:
-                speed[0] = -SPEED
-                speed[1] = -SPEED
+                speed[0] = 0
+                speed[1] = 0
             if action == 2:
                 speed[0] = 0
                 speed[1] = SPEED
@@ -95,8 +98,8 @@ def train():
                 speed[0] = SPEED
                 speed[1] = 0
             if action == 4:
-                speed[0] = 0
-                speed[1] = 0
+                speed[0] = -SPEED
+                speed[1] = -SPEED
             
 
             state_, reward_ = env.step(speed)
@@ -116,11 +119,12 @@ def train():
             if done is True:
                 break
         # Reduce chance of random action as we train the model.
-        if num_epochs <= 50:
-            e -= 0.001 #0.01
-            
+        if num_epoch <= 50:
+            e -= 0.001
         else:
-            e -= 0.003 #0.002
+            e -= 0.002 #0.01
+            
+        
         stepList.append(j)
         rewardList.append(rAll)
         lossList.append(loss)
@@ -129,8 +133,8 @@ def train():
         print("e: " + str(e))
         print("Reward: " + str(rAll))
         pickle.dump({'stepList': stepList, 'rewardList': rewardList, 'lossList': lossList},
-                    open(model_name +'.p', "wb"))
-        model.save(model_name +'.hdf5')
+                    open(model_name + str(num_epochs) + '_' + str(num_steps) +'.p', "wb"))
+        model.save(model_name + str(num_epochs) + '_' + str(num_steps) +'.hdf5')
         if done is True:
                 break
     
@@ -142,7 +146,8 @@ def train():
     plt.plot(stepList)
     plt.plot(lossList)
     
-        
+
+    
 
 if __name__ == '__main__':
     try:

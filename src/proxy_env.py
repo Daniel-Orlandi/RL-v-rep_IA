@@ -39,9 +39,9 @@ class RLBot(object):
         self.proxy_sensors = []
 
         # for loop to retrieve proxy sensor arrays and initiate sensors
-        for i in range(16):
+        for i in range(3):
             _, sensor_handle = vrep.simxGetObjectHandle(
-                self.client_id, 'ultrasonic_sensor#' + str(i),
+                self.client_id, 'Proximity_sensor' + str(i),
                 vrep.simx_opmode_blocking)
             # Append to the list of sensors
             self.proxy_sensors.append(sensor_handle)
@@ -133,7 +133,7 @@ class RLBot(object):
         reward['proxy_sensor'] = (
             observations['proxy_sensor'] < 0.7).sum() * -2
         reward['proxy_sensor'] += (
-            observations['proxy_sensor'] == 0).sum() * -10
+            observations['proxy_sensor'] == 2).sum() * 10
 
         # Should be rewarded for movement
         r = np.clip(np.sum(np.absolute(action)) * 2, 0, 2)
